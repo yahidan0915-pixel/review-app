@@ -4,66 +4,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>レビュー分析AI</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root { --bg:#0d0d0d; --surface:#161616; --surface2:#1f1f1f; --border:#2a2a2a; --accent:#00e5a0; --accent2:#7c3aed; --text:#f0f0f0; --text-muted:#777; --positive:#00e5a0; --negative:#ff4d6d; }
-    * { box-sizing:border-box; margin:0; padding:0; }
-    body { background:var(--bg); color:var(--text); font-family:'Noto Sans JP',sans-serif; min-height:100vh; padding:2rem 1rem; }
-    header { text-align:center; margin-bottom:2.5rem; }
-    header h1 { font-family:'Space Mono',monospace; font-size:clamp(1.6rem,4vw,2.4rem); background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-    header p { color:var(--text-muted); margin-top:0.5rem; font-size:0.9rem; }
-    .container { max-width:860px; margin:0 auto; }
-    .api-section { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
-    .api-section label { font-size:0.8rem; color:var(--text-muted); white-space:nowrap; }
-    .api-section input { flex:1; min-width:200px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:0.5rem 0.75rem; color:var(--text); font-family:'Space Mono',monospace; font-size:0.85rem; outline:none; }
-    .api-section input:focus { border-color:var(--accent); }
-    .api-status { font-size:0.78rem; padding:0.3rem 0.75rem; border-radius:20px; white-space:nowrap; }
-    .api-status.set { background:rgba(0,229,160,0.12); color:var(--accent); }
-    .api-status.unset { background:rgba(255,77,109,0.12); color:var(--negative); }
-    .search-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1.5rem; }
-    .input-row { display:flex; gap:0.75rem; }
-    .url-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:0.85rem 1rem; color:var(--text); font-size:0.95rem; outline:none; }
-    .url-input:focus { border-color:var(--accent); }
-    .url-input::placeholder { color:var(--text-muted); }
-    .analyze-btn { background:var(--accent); color:#000; border:none; border-radius:10px; padding:0.85rem 1.75rem; font-weight:700; font-size:0.95rem; cursor:pointer; white-space:nowrap; font-family:'Noto Sans JP',sans-serif; }
-    .analyze-btn:disabled { opacity:0.4; cursor:not-allowed; }
-    .progress-section { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1.5rem; display:none; }
-    .progress-label { display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.85rem; }
-    .progress-text { color:var(--text-muted); }
-    .progress-count { color:var(--accent); font-family:'Space Mono',monospace; }
-    .progress-bar-bg { background:var(--surface2); border-radius:4px; height:6px; overflow:hidden; }
-    .progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:4px; transition:width 0.3s ease; width:0%; }
-    .status-msg { margin-top:0.75rem; font-size:0.82rem; color:var(--text-muted); min-height:1.2em; }
-    #results { display:none; }
-    .result-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:0.5rem; }
-    .result-header h2 { font-size:1.1rem; color:var(--text-muted); }
-    .badge { font-family:'Space Mono',monospace; font-size:0.78rem; padding:0.3rem 0.75rem; border-radius:20px; background:rgba(0,229,160,0.1); color:var(--accent); border:1px solid rgba(0,229,160,0.3); }
-    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
-    @media (max-width:600px) { .grid-2 { grid-template-columns:1fr; } .input-row { flex-direction:column; } }
-    .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem; }
-    .card h3 { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:1rem; }
-    .score-card { margin-bottom:1rem; background:linear-gradient(135deg,rgba(0,229,160,0.06),rgba(124,58,237,0.06)); border-color:rgba(0,229,160,0.2); }
-    .score-display { display:flex; align-items:baseline; gap:0.3rem; margin-bottom:0.75rem; }
-    .score-num { font-family:'Space Mono',monospace; font-size:3.5rem; font-weight:700; color:var(--accent); line-height:1; }
-    .score-denom { font-size:1.2rem; color:var(--text-muted); }
-    .score-reason { font-size:0.88rem; color:var(--text-muted); line-height:1.6; }
-    .sentiment-bar { height:28px; border-radius:6px; overflow:hidden; display:flex; margin-bottom:0.75rem; }
-    .sent-pos { background:var(--positive); display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; color:#000; transition:width 1s ease; }
-    .sent-neg { background:var(--negative); display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; color:#fff; transition:width 1s ease; }
-    .sentiment-labels { display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-muted); }
-    .points-list { list-style:none; }
-    .points-list li { padding:0.4rem 0; font-size:0.88rem; line-height:1.5; display:flex; gap:0.5rem; border-bottom:1px solid var(--border); }
-    .points-list li:last-child { border-bottom:none; }
-    .points-list li::before { flex-shrink:0; margin-top:0.1rem; }
-    .good-list li::before { content:"✓"; color:var(--positive); }
-    .bad-list li::before { content:"✗"; color:var(--negative); }
-    .keywords { display:flex; flex-wrap:wrap; gap:0.5rem; }
-    .keyword-tag { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:0.3rem 0.75rem; font-size:0.82rem; color:var(--text); }
-    .keyword-tag:nth-child(-n+3) { border-color:rgba(0,229,160,0.4); color:var(--accent); }
-    .error-box { background:rgba(255,77,109,0.08); border:1px solid rgba(255,77,109,0.3); border-radius:12px; padding:1rem 1.25rem; color:var(--negative); font-size:0.9rem; margin-bottom:1rem; display:none; }
-    canvas { max-height:180px; }
+    :root{--bg:#0d0d0d;--surface:#161616;--surface2:#1f1f1f;--border:#2a2a2a;--accent:#00e5a0;--accent2:#7c3aed;--text:#f0f0f0;--text-muted:#777;--positive:#00e5a0;--negative:#ff4d6d;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Noto Sans JP',sans-serif;min-height:100vh;padding:2rem 1rem;}
+    header{text-align:center;margin-bottom:2.5rem;}
+    header h1{font-family:'Space Mono',monospace;font-size:clamp(1.6rem,4vw,2.4rem);background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    header p{color:var(--text-muted);margin-top:0.5rem;font-size:0.9rem;}
+    .container{max-width:860px;margin:0 auto;}
+    .api-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;}
+    .api-section label{font-size:0.8rem;color:var(--text-muted);white-space:nowrap;}
+    .api-section input{flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;color:var(--text);font-family:'Space Mono',monospace;font-size:0.85rem;outline:none;}
+    .api-section input:focus{border-color:var(--accent);}
+    .api-status{font-size:0.78rem;padding:0.3rem 0.75rem;border-radius:20px;white-space:nowrap;}
+    .api-status.set{background:rgba(0,229,160,0.12);color:var(--accent);}
+    .api-status.unset{background:rgba(255,77,109,0.12);color:var(--negative);}
+    .search-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;}
+    .input-row{display:flex;gap:0.75rem;}
+    .url-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.85rem 1rem;color:var(--text);font-size:0.95rem;outline:none;}
+    .url-input:focus{border-color:var(--accent);}
+    .url-input::placeholder{color:var(--text-muted);}
+    .analyze-btn{background:var(--accent);color:#000;border:none;border-radius:10px;padding:0.85rem 1.75rem;font-weight:700;font-size:0.95rem;cursor:pointer;white-space:nowrap;font-family:'Noto Sans JP',sans-serif;}
+    .analyze-btn:disabled{opacity:0.4;cursor:not-allowed;}
+    .progress-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:none;}
+    .progress-label{display:flex;justify-content:space-between;margin-bottom:0.5rem;font-size:0.85rem;}
+    .progress-text{color:var(--text-muted);}
+    .progress-count{color:var(--accent);font-family:'Space Mono',monospace;}
+    .progress-bar-bg{background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;}
+    .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width 0.3s ease;width:0%;}
+    .status-msg{margin-top:0.75rem;font-size:0.82rem;color:var(--text-muted);min-height:1.2em;}
+    #results{display:none;}
+    .result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.5rem;}
+    .result-header h2{font-size:1.1rem;color:var(--text-muted);}
+    .badge{font-family:'Space Mono',monospace;font-size:0.78rem;padding:0.3rem 0.75rem;border-radius:20px;background:rgba(0,229,160,0.1);color:var(--accent);border:1px solid rgba(0,229,160,0.3);}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+    @media(max-width:600px){.grid-2{grid-template-columns:1fr;}.input-row{flex-direction:column;}}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;}
+    .card h3{font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:1rem;}
+    .score-card{margin-bottom:1rem;background:linear-gradient(135deg,rgba(0,229,160,0.06),rgba(124,58,237,0.06));border-color:rgba(0,229,160,0.2);}
+    .score-display{display:flex;align-items:baseline;gap:0.3rem;margin-bottom:0.75rem;}
+    .score-num{font-family:'Space Mono',monospace;font-size:3.5rem;font-weight:700;color:var(--accent);line-height:1;}
+    .score-denom{font-size:1.2rem;color:var(--text-muted);}
+    .score-reason{font-size:0.88rem;color:var(--text-muted);line-height:1.6;}
+    .sentiment-bar{height:28px;border-radius:6px;overflow:hidden;display:flex;margin-bottom:0.75rem;}
+    .sent-pos{background:var(--positive);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;color:#000;transition:width 1s ease;}
+    .sent-neg{background:var(--negative);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;color:#fff;transition:width 1s ease;}
+    .sentiment-labels{display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-muted);}
+    .points-list{list-style:none;}
+    .points-list li{padding:0.4rem 0;font-size:0.88rem;line-height:1.5;display:flex;gap:0.5rem;border-bottom:1px solid var(--border);}
+    .points-list li:last-child{border-bottom:none;}
+    .points-list li::before{flex-shrink:0;margin-top:0.1rem;}
+    .good-list li::before{content:"✓";color:var(--positive);}
+    .bad-list li::before{content:"✗";color:var(--negative);}
+    .keywords{display:flex;flex-wrap:wrap;gap:0.5rem;}
+    .keyword-tag{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:0.3rem 0.75rem;font-size:0.82rem;color:var(--text);}
+    .keyword-tag:nth-child(-n+3){border-color:rgba(0,229,160,0.4);color:var(--accent);}
+    .error-box{background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.3);border-radius:12px;padding:1rem 1.25rem;color:var(--negative);font-size:0.9rem;margin-bottom:1rem;display:none;}
+    canvas{max-height:180px;}
   </style>
 </head>
 <body>
@@ -72,13 +71,13 @@
     <div class="api-section">
       <label>Claude API Key</label>
       <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
-      <button class="analyze-btn" style="padding:0.5rem 1rem;font-size:0.82rem;" onclick="saveKey()">保存</button>
+      <button class="analyze-btn" style="padding:0.5rem 1rem;font-size:0.82rem;" id="saveBtn">保存</button>
       <span class="api-status unset" id="apiStatus">未設定</span>
     </div>
     <div class="search-box">
       <div class="input-row">
         <input type="text" class="url-input" id="urlInput" placeholder="Amazon.co.jp または 楽天市場の商品URLを貼り付けてください" />
-        <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()">分析する</button>
+        <button class="analyze-btn" id="analyzeBtn">分析する</button>
       </div>
     </div>
     <div class="error-box" id="errorBox"></div>
@@ -96,7 +95,10 @@
       </div>
       <div class="grid-2">
         <div class="card"><h3>星評価の分布</h3><canvas id="starChart"></canvas></div>
-        <div class="card"><h3>感情分析</h3><div class="sentiment-bar"><div class="sent-pos" id="sentPos" style="width:0%"></div><div class="sent-neg" id="sentNeg" style="width:0%"></div></div><div class="sentiment-labels"><span id="sentPosLabel">ポジティブ</span><span id="sentNegLabel">ネガティブ</span></div></div>
+        <div class="card"><h3>感情分析</h3>
+          <div class="sentiment-bar"><div class="sent-pos" id="sentPos" style="width:0%"></div><div class="sent-neg" id="sentNeg" style="width:0%"></div></div>
+          <div class="sentiment-labels"><span id="sentPosLabel">ポジティブ</span><span id="sentNegLabel">ネガティブ</span></div>
+        </div>
       </div>
       <div class="grid-2">
         <div class="card"><h3>👍 良い点</h3><ul class="points-list good-list" id="goodPoints"></ul></div>
@@ -105,53 +107,101 @@
       <div class="card" style="margin-top:1rem"><h3>よく出るキーワード Top10</h3><div class="keywords" id="keywords"></div></div>
     </div>
   </div>
-  <script>
-    let starChartInstance=null;
-    async function checkKey(){try{const r=await fetch('/api/check-key');const d=await r.json();const e=document.getElementById('apiStatus');if(d.has_key){e.textContent='設定済み ('+d.key_preview+')';e.className='api-status set';}}catch(e){}}
-    async function saveKey(){const k=document.getElementById('apiKeyInput').value.trim();if(!k)return;try{const r=await fetch('/api/save-key',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:k})});if(r.ok){const e=document.getElementById('apiStatus');e.textContent='設定済み ('+k.substring(0,8)+'...)';e.className='api-status set';document.getElementById('apiKeyInput').value='';}}catch(e){}}
-    function showError(m){const e=document.getElementById('errorBox');e.textContent='⚠ '+m;e.style.display='block';}
-    function hideError(){document.getElementById('errorBox').style.display='none';}
-    function setProgress(f,t){const p=t>0?Math.min(100,(f/t)*100):0;document.getElementById('progressFill').style.width=p+'%';document.getElementById('progressCount').textContent=t>0?f+' / '+t+'件':'';}
-    async function startAnalysis(){
-      const url=document.getElementById('urlInput').value.trim();if(!url)return;
-      hideError();document.getElementById('results').style.display='none';document.getElementById('progressSection').style.display='block';document.getElementById('analyzeBtn').disabled=true;
-      document.getElementById('progressText').textContent='準備中...';document.getElementById('progressCount').textContent='';document.getElementById('statusMsg').textContent='';setProgress(0,0);
-      const apiKey=document.getElementById('apiKeyInput').value.trim()||null;
-      try{const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,api_key:apiKey})});
-        const reader=res.body.getReader();const decoder=new TextDecoder('utf-8');let buffer='';
-        while(true){const{done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});
-          const lines=buffer.split('
-');buffer=lines.pop();
-          for(const line of lines){if(!line.startsWith('data: '))continue;try{const event=JSON.parse(line.slice(6));handleEvent(event);}catch(e){}}
-        }
-      }catch(e){showError('通信エラー: '+e.message);}finally{document.getElementById('analyzeBtn').disabled=false;}
-    }
-    function handleEvent(e){
-      switch(e.type){
-        case 'status':document.getElementById('progressText').textContent=e.message;document.getElementById('statusMsg').textContent='';break;
-        case 'total':document.getElementById('progressText').textContent='レビュー取得中...';break;
-        case 'progress':document.getElementById('progressText').textContent='レビュー取得中...';document.getElementById('statusMsg').textContent='ページ '+e.page+' / '+e.total_pages;setProgress(e.fetched,e.total);break;
-        case 'reviews_complete':document.getElementById('progressText').textContent='分析中...';setProgress(e.total,e.total);break;
-        case 'complete':document.getElementById('progressSection').style.display='none';renderResults(e);break;
-        case 'error':document.getElementById('progressSection').style.display='none';showError(e.message);document.getElementById('analyzeBtn').disabled=false;break;
+<script>
+var starChartInstance = null;
+
+function checkKey() {
+  fetch('/api/check-key').then(function(r){ return r.json(); }).then(function(d){
+    var el = document.getElementById('apiStatus');
+    if(d.has_key){ el.textContent = '設定済み (' + d.key_preview + ')'; el.className = 'api-status set'; }
+  }).catch(function(){});
+}
+
+function saveKey() {
+  var k = document.getElementById('apiKeyInput').value.trim();
+  if(!k) return;
+  fetch('/api/save-key', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({api_key:k})})
+    .then(function(r){
+      if(r.ok){
+        var el = document.getElementById('apiStatus');
+        el.textContent = '設定済み (' + k.substring(0,8) + '...)';
+        el.className = 'api-status set';
+        document.getElementById('apiKeyInput').value = '';
       }
-    }
-    function renderResults(data){
-      const{star_counts,total_reviews,analysis}=data;
-      document.getElementById('totalBadge').textContent=total_reviews+'件を分析';document.getElementById('results').style.display='block';
-      document.getElementById('scoreNum').textContent=analysis.recommend_score;document.getElementById('scoreReason').textContent=analysis.recommend_reason;
-      const pos=analysis.positive_ratio||0;const neg=100-pos;
-      setTimeout(()=>{document.getElementById('sentPos').style.width=pos+'%';document.getElementById('sentNeg').style.width=neg+'%';document.getElementById('sentPos').textContent=pos>=15?pos+'%':'';document.getElementById('sentNeg').textContent=neg>=15?neg+'%':'';},100);
-      document.getElementById('sentPosLabel').textContent='ポジティブ '+pos+'%';document.getElementById('sentNegLabel').textContent='ネガティブ '+neg+'%';
-      document.getElementById('goodPoints').innerHTML=(analysis.good_points||[]).map(p=>'<li>'+p+'</li>').join('');
-      document.getElementById('badPoints').innerHTML=(analysis.bad_points||[]).map(p=>'<li>'+p+'</li>').join('');
-      document.getElementById('keywords').innerHTML=(analysis.keywords||[]).map(k=>'<span class="keyword-tag">'+k+'</span>').join('');
-      if(starChartInstance)starChartInstance.destroy();
-      const ctx=document.getElementById('starChart').getContext('2d');
-      starChartInstance=new Chart(ctx,{type:'bar',data:{labels:['★1','★2','★3','★4','★5'],datasets:[{data:[star_counts[1]||0,star_counts[2]||0,star_counts[3]||0,star_counts[4]||0,star_counts[5]||0],backgroundColor:['rgba(255,77,109,0.7)','rgba(255,150,80,0.7)','rgba(255,209,102,0.7)','rgba(100,200,150,0.7)','rgba(0,229,160,0.85)'],borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#888'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#888'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
-      window.scrollTo({top:0,behavior:'smooth'});
-    }
-    checkKey();
-  </script>
+    }).catch(function(e){ alert('保存エラー: ' + e.message); });
+}
+
+function showError(m){ var el=document.getElementById('errorBox'); el.textContent='⚠ '+m; el.style.display='block'; }
+function hideError(){ document.getElementById('errorBox').style.display='none'; }
+function setProgress(f,t){ var p=t>0?Math.min(100,(f/t)*100):0; document.getElementById('progressFill').style.width=p+'%'; document.getElementById('progressCount').textContent=t>0?f+' / '+t+'件':''; }
+
+function startAnalysis() {
+  var url = document.getElementById('urlInput').value.trim();
+  if(!url) return;
+  hideError();
+  document.getElementById('results').style.display='none';
+  document.getElementById('progressSection').style.display='block';
+  document.getElementById('analyzeBtn').disabled=true;
+  document.getElementById('progressText').textContent='準備中...';
+  document.getElementById('progressCount').textContent='';
+  document.getElementById('statusMsg').textContent='';
+  setProgress(0,0);
+  var apiKey = document.getElementById('apiKeyInput').value.trim() || null;
+  fetch('/api/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:url, api_key:apiKey})})
+    .then(function(res){
+      var reader = res.body.getReader();
+      var decoder = new TextDecoder('utf-8');
+      var buffer = '';
+      function read(){
+        reader.read().then(function(r){
+          if(r.done){ document.getElementById('analyzeBtn').disabled=false; return; }
+          buffer += decoder.decode(r.value, {stream:true});
+          var lines = buffer.split('\n');
+          buffer = lines.pop();
+          for(var i=0;i<lines.length;i++){
+            if(!lines[i].startsWith('data: ')) continue;
+            try{ handleEvent(JSON.parse(lines[i].slice(6))); }catch(e){}
+          }
+          read();
+        });
+      }
+      read();
+    }).catch(function(e){ showError('通信エラー: '+e.message); document.getElementById('analyzeBtn').disabled=false; });
+}
+
+function handleEvent(e){
+  switch(e.type){
+    case 'status': document.getElementById('progressText').textContent=e.message; document.getElementById('statusMsg').textContent=''; break;
+    case 'total': document.getElementById('progressText').textContent='レビュー取得中...'; break;
+    case 'progress': document.getElementById('progressText').textContent='レビュー取得中...'; document.getElementById('statusMsg').textContent='ページ '+e.page+' / '+e.total_pages; setProgress(e.fetched,e.total); break;
+    case 'reviews_complete': document.getElementById('progressText').textContent='分析中...'; setProgress(e.total,e.total); break;
+    case 'complete': document.getElementById('progressSection').style.display='none'; renderResults(e); break;
+    case 'error': document.getElementById('progressSection').style.display='none'; showError(e.message); document.getElementById('analyzeBtn').disabled=false; break;
+  }
+}
+
+function renderResults(data){
+  var sc=data.star_counts, tr=data.total_reviews, a=data.analysis;
+  document.getElementById('totalBadge').textContent=tr+'件を分析';
+  document.getElementById('results').style.display='block';
+  document.getElementById('scoreNum').textContent=a.recommend_score;
+  document.getElementById('scoreReason').textContent=a.recommend_reason;
+  var pos=a.positive_ratio||0, neg=100-pos;
+  setTimeout(function(){ document.getElementById('sentPos').style.width=pos+'%'; document.getElementById('sentNeg').style.width=neg+'%'; document.getElementById('sentPos').textContent=pos>=15?pos+'%':''; document.getElementById('sentNeg').textContent=neg>=15?neg+'%':''; },100);
+  document.getElementById('sentPosLabel').textContent='ポジティブ '+pos+'%';
+  document.getElementById('sentNegLabel').textContent='ネガティブ '+neg+'%';
+  document.getElementById('goodPoints').innerHTML=(a.good_points||[]).map(function(p){return '<li>'+p+'</li>';}).join('');
+  document.getElementById('badPoints').innerHTML=(a.bad_points||[]).map(function(p){return '<li>'+p+'</li>';}).join('');
+  document.getElementById('keywords').innerHTML=(a.keywords||[]).map(function(k){return '<span class="keyword-tag">'+k+'</span>';}).join('');
+  if(starChartInstance) starChartInstance.destroy();
+  var ctx=document.getElementById('starChart').getContext('2d');
+  starChartInstance=new Chart(ctx,{type:'bar',data:{labels:['★1','★2','★3','★4','★5'],datasets:[{data:[sc[1]||0,sc[2]||0,sc[3]||0,sc[4]||0,sc[5]||0],backgroundColor:['rgba(255,77,109,0.7)','rgba(255,150,80,0.7)','rgba(255,209,102,0.7)','rgba(100,200,150,0.7)','rgba(0,229,160,0.85)'],borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#888'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#888'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+document.getElementById('saveBtn').addEventListener('click', saveKey);
+document.getElementById('analyzeBtn').addEventListener('click', startAnalysis);
+checkKey();
+</script>
 </body>
 </html>
