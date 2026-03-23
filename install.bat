@@ -35,10 +35,10 @@ call venv\Scripts\activate.bat
 
 python -c "import uvicorn" > nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo [5/5] Installing packages...
-    pip install --only-binary :all: greenlet==3.1.1
-    pip install -r requirements.txt -q --no-deps
-    pip install fastapi uvicorn anthropic python-dotenv
+    echo [5/5] Installing packages (first time only)...
+    pip install --upgrade pip -q
+    pip install fastapi uvicorn anthropic python-dotenv -q
+    pip install playwright -q
     playwright install chromium
 ) else (
     echo [5/5] Packages already installed
