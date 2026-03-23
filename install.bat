@@ -33,16 +33,11 @@ echo [4/5] Setting up virtual environment...
 if not exist "venv" python -m venv venv
 call venv\Scripts\activate.bat
 
-python -c "import uvicorn" > nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo [5/5] Installing packages (first time only)...
-    pip install --upgrade pip -q
-    pip install fastapi uvicorn anthropic python-dotenv -q
-    pip install playwright -q
-    playwright install chromium
-) else (
-    echo [5/5] Packages already installed
-)
+echo [5/5] Installing packages...
+pip install --upgrade pip -q
+pip install fastapi uvicorn anthropic python-dotenv playwright -q
+echo Installing Playwright browsers...
+python -m playwright install chromium
 
 if not exist ".env" copy ".env.example" ".env" > nul
 
